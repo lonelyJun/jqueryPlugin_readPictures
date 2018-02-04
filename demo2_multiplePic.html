@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <link rel="stylesheet" href="./css/picReadStyle.css">
+</head>
+
+<body>
+    <div class="coverAllLayer">
+        <div class="readPicContent">
+            <div class="picList">
+                <img src="./img/1.jpg" alt="">
+                <img src="./img/2.jpg" alt="">
+                <img src="./img/3.jpg" alt="">
+                <img src="./img/4.jpg" alt="">
+                <img src="./img/5.jpg" alt="">
+            </div>
+        </div>
+    </div>   
+    <div id="__previewImage-container"></div>
+</body>
+<script src="./js/jquery.min.js"></script>
+<script src="./js/readPic.js"></script>
+<script>
+    $(function(){
+        $('.picList img').picReadModel();
+    });
+</script>
+</html>
