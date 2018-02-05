@@ -8,11 +8,15 @@
 
             //初始化参数
             /*************可设置更改的变量*****************************/
-            var const_scaleDoubleCl = 4;           //全局静态变量，双击后的
+            var const_scaleDoubleCl = 2.5;             //全局静态变量，双击后的
             var const_imgMargin = 5;                 //图片间间隔  
+            var const_changeScaleValue = 0.05;        //手势缩放时的变化频率
+            var const_swipSpeed = 25;                //越大越不灵敏。建议50~100之间
+            var const_scaleMax = 3;
+            var const_scaleMin = 0.4;
 
             var threshold_doubleTime = 230;          //阈值，双击最短判定时间差，单位毫秒
-            var threshold_touchmoveTime = 1;           //阈值，移动事件处理判定，单位毫秒
+            var threshold_touchmoveTime = 20;         //阈值，移动事件处理判定，单位毫秒
 
 
             /********************全局通用*****************************/
@@ -23,9 +27,10 @@
             var _windowHeight =  document.body.clientHeight;  //获取全局高度
             var _imgLength;                                   //图片数量
             var _swipeDistanceX;                              //横向滑动距离
-            var _swipePercentY;                        //纵向滑动距离
+            var _swipePercentY;                               //纵向滑动距离
             var _swipWindowMax;                               //滑动窗口最大值
             var _index;                                       //记录当前位置值，与currentObj绑定
+            var _windowPosition;                               
 
             var currentObj;         //当前操作的对象
 
@@ -40,8 +45,9 @@
             var point;                         //自定义数组对象，用作点位记录器
             var pointOri;                      //自定义数组对象，用作点位暂留记录器
 
-            //var flag_swipWindow=true;               //用于记录滑动窗口边界是否可运行
-            //var flag_swipImage=true;                //用于图片滑动边界是否可运行 
+            //var flag_swipWindow=false;               //用于记录滑动窗口边界是否可运行
+            //var flag_swipImage=true;                //用于图片滑动边界是否可运行
+            var flag_swip = false; 
 
             //用于计算方位
             offsetX=0;                         //计算X偏移量
@@ -60,7 +66,7 @@
                 currentObj = _imgLength > 1? _self.eq(_index):_self;
  
                 _swipWindowMax = _self.parent().width()-_windowWidth;   //提前计算滑动窗口最大值
-                _swipeDistanceX= _windowWidth/30;    //提前计算每次滑动窗口距离
+                _swipeDistanceX= _windowWidth/const_swipSpeed;    //提前计算每次滑动窗口距离
             }
 
             /********************     函数     *****************************/
@@ -139,23 +145,33 @@
 
             //滑动窗口
             var swipWindow = function(dir){
-                var windowPosition= Number(_self.parent().css('left').replace(/[^-\d\.]/g, ''));
-                var temp = windowPosition;
-                windowPosition -= _swipeDistanceX*(dir?-1:1);
-                windowPosition= windowPosition>0?0:windowPosition<-_swipWindowMax?-_swipWindowMax:windowPosition;   //确定窗口大小在范围内  
-                _self.parent().css('left',windowPosition);
-                return temp == windowPosition? false:true;
+             //   _windowPosition= Number(_self.parent().css('left').replace(/[^-\d\.]/g, ''));
+                var temp = _windowPosition;
+                _windowPosition -= _swipeDistanceX*(dir?-1:1);
+                _windowPosition= _windowPosition>0?0:_windowPosition<-_swipWindowMax?-_swipWindowMax:_windowPosition;   //确定窗口大小在范围内  
+                _self.parent().css('left',_windowPosition);
+                return temp == _windowPosition? false:true;
                 // return windowPosition == 0?1:windowPosition == -_swipWindowMax?-1:0;
             }
+
+            //滑动窗口
+            // var swipWindow = function(dir){
+            //     _self.parent().css('left',windowPosition);
+            // }
+
+            //计算是否可滑动图片
+            // var caculateImageX = function(){
+
+               
+            // }
 
             //横向滑动图片 
             var swipImageX = function(obj,dir,range){
                 var temp = offsetX;
                 offsetX -=  _swipeDistanceX*(dir?-1:1)*scale;
-                offsetX= offsetX<-range?-range:offsetX>range?range:offsetX;   //确定图片大小在范围内  
-                cssChange(obj,scale,offsetX,offsetY); 
-                return offsetX == temp?false:true;
-            //    return offsetX == range?1:offsetX == -range?-1:0;            
+                offsetX= offsetX<-range?-range:offsetX>range?range:offsetX;   //确定图片大小在范围内                 
+                cssChange(obj,scale,offsetX,offsetY);   
+                return offsetX == temp?false:true;       
             }
 
            //纵向滑动图片 
@@ -176,6 +192,7 @@
                 // 如果目标对象变更，还原之前的目标
                 if(index != _index){
                     //如果目标变换了，重置放大，偏移参数
+                    flag_swip = false;
                     scale = 1;
                     offsetX = 0;
                     offsetY = 0;
@@ -195,7 +212,7 @@
                 doubleClick(ev,function(){
                     //双击判定完成，请输入需要执行的事件
                     scale = scale == 1?const_scaleDoubleCl:1;
-                    cssChange(currentObj,scale,offsetX,offsetY);
+                    cssChange(currentObj,scale,0,0);
                 });
             });
 
@@ -210,41 +227,43 @@
                         curWidth = currentObj.width();
                         curHeight = currentObj.height();
                         if(getDeriction(point,pointOri)){
+                            _windowPosition= Number(_self.parent().css('left').replace(/[^-\d\.]/g, ''));
                            //左右滑动
                            if(scale <= 1){
                                //滑动窗口
                                 swipWindow(point[0].x>pointOri[0].x?1:0);  //true:右滑,false:左滑
                            }else{
                                 //优先判别滑动对象或者窗口
-                                 var offsetRangeX = (scale-1)/2*_windowWidth; //放大后的左右范围
-                                // if(flag_swipWindow && flag_swipImage){
-                                //     flag_swipWindow = false;
-                                // }
-
-                                // if(flag_swipImage){
-                                //     flag_swipImage = swipImageX(currentObj,point[0].x>pointOri[0].x?1:0,offsetRangeX)==0?true:false;
-                                //     console.log("图片可滑动"+flag_swipImage); 
-                                // }
-
-                                // if(flag_swipWindow){
-                                //     flag_swipWindow = swipWindow(point[0].x>pointOri[0].x?1:0)==0?true:false; 
-                                // }
-
-                                // console.log("窗口可滑动"+flag_swipWindow);
-
-
-                                // if(!flag_swipWindow && !flag_swipImage){
-                                //     flag_swipImage = true;
-                                // }
-
+                                
+                                var offsetRangeX = (scale-1)/2*_windowWidth; //放大后的左右范围
                                 if(point[0].x>pointOri[0].x){              //右滑
-                                    swipImageX(currentObj,1,offsetRangeX);
-                                    if(offsetX == offsetRangeX){
+                                    //判定滑动哪个对象
+                                    if(offsetX == offsetRangeX && !flag_swip){
+                                        flag_swip =  true;
+                                    }     
+                                    else if(_windowPosition == -(_windowWidth + const_imgMargin)*_index && flag_swip){
+                                        flag_swip = false;
+                                    }
+                                    //滑动相应对象
+                                    if(!flag_swip){
+                                        swipImageX(currentObj,1,offsetRangeX);
+                                    }
+                                        
+                                    if(flag_swip){
                                         swipWindow(1);  
                                     }
                                 }else{                                     //左滑
-                                    swipImageX(currentObj,0,offsetRangeX);
-                                    if(offsetX == -offsetRangeX){
+                                    if(offsetX == -offsetRangeX
+                                    && !flag_swip){
+                                        flag_swip =  true;
+                                    }     
+                                    else if(_windowPosition == -(_windowWidth + const_imgMargin)*_index && flag_swip){
+                                        flag_swip = false;
+                                    }
+
+                                    if(!flag_swip)
+                                        swipImageX(currentObj,0,offsetRangeX);
+                                    if(flag_swip){
                                         swipWindow(0);  
                                     }
                                 } 
@@ -262,8 +281,14 @@
                         //缩放事件
                         if(getScaleDeriction(point,pointOri)){
                             //放大
+                            scale += const_changeScaleValue;
+                            scale = scale > const_scaleMax?const_scaleMax:scale;
+                 //           cssChange(currentObj,scale,0,0);
                         }else{
                             //缩小
+                            scale -= const_changeScaleValue;
+                            scale = scale < const_scaleMin?const_scaleMin:scale;
+                            cssChange(currentObj,scale,0,0);
                         }
                         
                     }
@@ -276,6 +301,11 @@
             /*触碰结束监听器*/
             $('body').on('touchend',function(ev){
                 judgeCurObj();
+                if(scale<1){
+                    cssChange(currentObj,1,0,0);
+                    scale=1;
+                } 
+
             });
         }  
     });  
