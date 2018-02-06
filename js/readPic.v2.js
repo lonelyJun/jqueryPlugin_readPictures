@@ -17,6 +17,8 @@
 
             var threshold_doubleTime = 230;          //阈值，双击最短判定时间差，单位毫秒
             var threshold_touchmoveTime = 20;         //阈值，移动事件处理判定，单位毫秒
+            var threshold_swipTime = 230;              //阈值，多久内触发算滑动
+            var threshold_swipDistance = 30;          //阈值，至少需要移动多少距离
 
 
             /********************全局通用*****************************/
@@ -55,6 +57,8 @@
             offsetX=0;                         //计算X偏移量
             offsetY=0;                         //计算Y偏移量
 
+            //左右滑动
+
 
             /********************初始化函数*****************************/
             function init(){
@@ -72,11 +76,6 @@
             }
 
             /********************     函数     *****************************/
-            //双击事件
-            // var doubleClick = function(ev,cb){     
-  
-            // }   
-
             // 样式控制
             var cssChange = function(obj,scale,offsetX,offsetY){
                 obj.css({
@@ -137,7 +136,8 @@
             }
 
             //显示指定图片
-            var showObjPic = function(index){
+            var showObjPic = function(index,prevIndex){
+                cssChange(_self.eq(prevIndex),1,0,0);  
                 _index = index;
                 flag_swip = false;
                 scale = 1;
@@ -145,7 +145,7 @@
                 offsetY = 0;
                 cssChange(_self.eq(_index),scale,offsetX,offsetY);                
                 currentObj = _self.eq(_index); 
-                _self.parent().css('left',-(index*(_windowWidth+const_imgMargin)));             
+                _self.parent().stop(true,true).animate({'left':-(index*(_windowWidth+const_imgMargin))});             
             }
 
             /********************     执行函数     *****************************/
@@ -208,8 +208,7 @@
                 }                              
             }); 
             
-            hammerListPan.on('panup',function(){  
-                console.log('1');             
+            hammerListPan.on('panup',function(){              
                 if(currentObj.height()*scale > _windowHeight){
                     var offsetRangeY =(scale-_windowHeight/currentObj.height())/2*100;  //放大后的上下范围
                     swipImageY(currentObj,0,offsetRangeY);   // true:下滑，false:上滑            
@@ -224,6 +223,7 @@
             });            
 
             hammerListPan.on('pinchin',function(){
+               
                 scale -= const_changeScaleValue;
                 scale = scale < const_scaleMin?const_scaleMin:scale;
                 cssChange(currentObj,scale,0,0);
@@ -233,35 +233,47 @@
                 scale += const_changeScaleValue;
                 scale = scale > const_scaleMax?const_scaleMax:scale;
                 cssChange(currentObj,scale,0,0);
-            });  
+            });       
             
-            hammerBodyDbClick.on('swipleft', function () {
-                if(_index != 0){
-                    _index--;
-                    showObjPic(_index);
-                }
+            $('body').on('touchstart',function(ev){
+                time_TouchmoveOri = new Date();
+                pointOri = ev.originalEvent.targetTouches[0].pageX;            
             });
-            
-            hammerBodyDbClick.on('swipleft', function () {
-                if(_index != _imgLength-1){
-                    _index++;
-                    showObjPic(_index);
-                }
-            });            
 
             /*触碰结束监听器*/
             $('body').on('touchend',function(ev){
                 // 阻止默认事件
                 ev.stopPropagation();
                 ev.preventDefault(); 
-                
                 judgeCurObj();
                 if(scale<1){
                     cssChange(currentObj,1,0,0);
                     scale=1;
                 } 
-
-            });
+                if(ev.originalEvent.changedTouches.length == 1){
+                    time_Touchmove = new Date();
+                    point = ev.originalEvent.changedTouches[0].pageX;
+                    if(time_Touchmove.getTime()-time_TouchmoveOri.getTime()<threshold_swipTime){
+                        var tempDistance=point-pointOri;
+                        if(Math.abs(tempDistance)>=threshold_swipDistance){
+                            if(tempDistance<0){
+                                if(_index != _imgLength-1){
+                                    var temIndex = _index;
+                                    _index++;
+                                    showObjPic(_index,temIndex);
+                                }
+                            }else{
+                                if(_index != 0){
+                                    var temIndex = _index;
+                                    _index--;
+                                    showObjPic(_index,temIndex);
+                                }
+                            }
+                        }
+                    }        
+                }
+                        
+            });           
         }  
     });  
 })(window.jQuery);
