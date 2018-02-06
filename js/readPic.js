@@ -209,6 +209,10 @@
 
             /*触碰开始监听器*/
             $('body').on('touchstart',function(ev){
+                // 阻止默认事件
+                ev.stopPropagation();
+                ev.preventDefault(); 
+
                 doubleClick(ev,function(){
                     //双击判定完成，请输入需要执行的事件
                     scale = scale == 1?const_scaleDoubleCl:1;
@@ -218,6 +222,10 @@
 
             /*划动监听器*/
             $('body').on('touchmove',function(ev){
+                // 阻止默认事件
+                ev.stopPropagation();
+                ev.preventDefault(); 
+
                 time_Touchmove = new Date();
                 point = getPoint(ev);    //实时记录点位
                 if(time_TouchmoveOri==undefined
@@ -300,6 +308,10 @@
 
             /*触碰结束监听器*/
             $('body').on('touchend',function(ev){
+                // 阻止默认事件
+                ev.stopPropagation();
+                ev.preventDefault(); 
+                
                 judgeCurObj();
                 if(scale<1){
                     cssChange(currentObj,1,0,0);
